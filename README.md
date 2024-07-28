@@ -2,6 +2,10 @@
 
 Python of the game of Yahtzee as a Markov Decision Process and different algorithms (Value Iteration, MCTS) to play the game.
 
+## Dependencies
+
+Python 3.10 and numpy 1.26.4 (could have been implemented without any dependencies but the engine would have been slower)
+
 ## Content
 
 - engine/
