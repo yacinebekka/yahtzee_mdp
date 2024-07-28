@@ -7,7 +7,7 @@ import csv
 
 
 class MCTSNode:
-    def __init__(self, state: YahtzeeState, game_engine: YahtzeeEngine, parent: MCTSNode=None, action: YahtzeeAction=None):
+    def __init__(self, state: YahtzeeState, game_engine: YahtzeeEngine, parent=None, action: YahtzeeAction=None):
         self.state = state
         self.parent = parent
         self.action = action
@@ -85,7 +85,6 @@ class MCTSTree:
 
 
 ## Test simple MCTS approach
-
 game_engine = YahtzeeEngine()
 initial_state = YahtzeeState((0,0,0,0,0), (None,)*13, 3)
 actions = game_engine.get_possible_actions(initial_state.is_final, initial_state.remaining_rolls, initial_state.score_card)
