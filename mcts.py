@@ -7,7 +7,7 @@ import csv
 
 
 class MCTSNode:
-    def __init__(self, state, game_engine, parent=None, action=None):
+    def __init__(self, state: YahtzeeState, game_engine: YahtzeeEngine, parent: MCTSNode=None, action: YahtzeeAction=None):
         self.state = state
         self.parent = parent
         self.action = action
@@ -26,7 +26,7 @@ class MCTSNode:
         self.children.append(new_node)
         return new_node
     
-    def update(self, result):
+    def update(self, result: float):
         self.visits += 1
         self.wins += (result / 400)
     
@@ -45,13 +45,13 @@ class MCTSNode:
 
 
 class MCTSTree:
-    def __init__(self, root: MCTSNode, game_engine: YahtzeeEngine, simulation_depth=250, num_simulations=20000):
+    def __init__(self, root: MCTSNode, game_engine: YahtzeeEngine, simulation_depth: int = 250, num_simulations: int = 1000):
         self.root = root
         self.game_engine = game_engine
         self.simulation_depth = simulation_depth
         self.num_simulations = num_simulations
     
-    def simulate(self, node):
+    def simulate(self, node: MCTSNode):
         current_depth = 0
         current_node = node
         while not current_node.state.is_final and current_depth < self.simulation_depth:
@@ -84,20 +84,16 @@ class MCTSTree:
         return best_action
 
 
-
 ## Test simple MCTS approach
-
 
 game_engine = YahtzeeEngine()
 initial_state = YahtzeeState((0,0,0,0,0), (None,)*13, 3)
 actions = game_engine.get_possible_actions(initial_state.is_final, initial_state.remaining_rolls, initial_state.score_card)
 
-
 state = game_engine.apply_action(initial_state, actions[0])
 play_count = 0
 
 while True:
-
     # print('-------------')
     # print(state)
 
