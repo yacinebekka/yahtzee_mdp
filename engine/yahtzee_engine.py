@@ -37,7 +37,7 @@ class YahtzeeState(State):
     def __hash__(self):
         return hash((self.dice_code, tuple(self.score_card), self.remaining_rolls))
 
-    def __eq__(self, other : YahtzeeState):
+    def __eq__(self, other):
         return (self.dice_code, tuple(self.score_card), self.remaining_rolls) == (other.dice_code, tuple(other.score_card), other.remaining_rolls)
 
     def __repr__(self):
