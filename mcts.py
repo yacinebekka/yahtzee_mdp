@@ -28,7 +28,7 @@ class MCTSNode:
     
     def update(self, result: float):
         self.visits += 1
-        self.wins += (result / 400)
+        self.wins += (result / 400) # Normalize the score
     
     def uct_select_child(self):
         if self.state.is_final:
