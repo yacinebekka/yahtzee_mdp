@@ -17,6 +17,7 @@ Python 3.10 and numpy 1.26.4 (could have been implemented without any dependenci
 
 ## Further improvments
 
+- Add remaining upper score point before bonus as a state features + re-evaluate performance
 - Try some Q-function approximation techniques
 - Try policy-based approaches
 - Parallelization for VI and MCTS
