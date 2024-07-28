@@ -5,11 +5,12 @@ from engine.constants import SCORING_CATEGORIES
 from engine.game_engine import GameEngine, State, Action
 from functools import lru_cache
 
+
 class YahtzeeState(State): 
     ## Optimized version of Yahtzee state for memory efficiency
     __slots__ = ['dice_code', 'score_card_mask', 'remaining_rolls', 'total_score']
 
-    def __init__(self, dice, score_card, remaining_rolls, total_score=0):
+    def __init__(self, dice: tuple, score_card: tuple, remaining_rolls: int, total_score: int = 0):
         self.dice_code = self.encode_dice(dice)
         scores = [score if score is not None else -1 for score in score_card]
         self.score_card = tuple(scores)
@@ -17,7 +18,7 @@ class YahtzeeState(State):
         self.total_score = np.int16(total_score)
         self.is_final = min(self.score_card) >= 0
 
-    def encode_dice(self, dice):
+    def encode_dice(self, dice: tuple):
         """Encode dice tuple into a single integer."""
         code = 0
         for die in sorted(dice):
@@ -36,7 +37,7 @@ class YahtzeeState(State):
     def __hash__(self):
         return hash((self.dice_code, tuple(self.score_card), self.remaining_rolls))
 
-    def __eq__(self, other):
+    def __eq__(self, other : YahtzeeState):
         return (self.dice_code, tuple(self.score_card), self.remaining_rolls) == (other.dice_code, tuple(other.score_card), other.remaining_rolls)
 
     def __repr__(self):
@@ -64,7 +65,7 @@ class YahtzeeEngine(GameEngine):
                 new_dice[i] = random.randint(1, 6)
         return tuple(sorted(new_dice))
 
-    @lru_cache(maxsize=2048)
+    @lru_cache(maxsize=512)
     def calculate_score(self, dice: tuple, category: str):
         """
         Calculate score given a scoring category and a dice combination
@@ -116,6 +117,7 @@ class YahtzeeEngine(GameEngine):
         if action.action_type == 'roll':
             new_dice = self.roll_dice(state, action.details)
             new_state = YahtzeeState(new_dice, state.score_card, state.remaining_rolls - 1, state.total_score)
+
         elif action.action_type == 'score':
             dice = state.decode_dice()
             score_card = list(state.score_card)
@@ -139,8 +141,8 @@ class YahtzeeEngine(GameEngine):
             return new_state.total_score - old_state.total_score
         return 0
 
-    @lru_cache(maxsize=2048)
-    def get_possible_actions(self, is_final: bool, remaining_rolls: int, score_card) -> tuple[YahtzeeAction]:
+    @lru_cache(maxsize=512)
+    def get_possible_actions(self, is_final: bool, remaining_rolls: int, score_card: tuple) -> tuple[YahtzeeAction]:
         """
         Generate space of possible actions given the a state
         """
@@ -183,15 +185,16 @@ class YahtzeeEngine(GameEngine):
         """
         Calculate the transition probabilities for a dice roll action.
         """
-        # Calculate the probability of each dice outcome
         new_states = {}
         dice_to_roll = [i for i in range(5) if i not in action.details]
         outcomes = itertools.product(range(1, 7), repeat=len(dice_to_roll))
         
         for outcome in outcomes:
             new_dice = list(state.decode_dice())
+
             for i, die_index in zip(outcome, dice_to_roll):
                 new_dice[die_index] = i
+
             new_dice = tuple(sorted(new_dice))
             new_state = YahtzeeState(new_dice, state.score_card, state.remaining_rolls - 1, state.total_score)
             probability = (1/6) ** len(dice_to_roll)   # Each die has an equal chance of landing on 1-6
@@ -203,12 +206,11 @@ class YahtzeeEngine(GameEngine):
         
         return new_states
 
-    @lru_cache(maxsize=2048)
-    def _transition_for_score(self, score_card, dice, details):
+    @lru_cache(maxsize=512)
+    def _transition_for_score(self, score_card: tuple, dice: tuple, details: str):
         """
         Calculate the transition probabilities for a scoring action.
         """
-        # Scoring results in a deterministic new state
         new_score_card = list(score_card)
         category_index = SCORING_CATEGORIES.index(details)
         new_score_card[category_index] = self.calculate_score(dice, details)
@@ -219,7 +221,7 @@ class YahtzeeEngine(GameEngine):
 
         return {new_state: 1}  # Deterministic transition
 
-    @lru_cache(maxsize=2048)
+    @lru_cache(maxsize=512)
     def get_total_score(self, score_card: tuple):
         """
         Calculate the total score across the board for a given state. Include the upper score board bonus (if > 63)
@@ -231,4 +233,3 @@ class YahtzeeEngine(GameEngine):
             return upper_board_score + lower_board_score + 35 # Bonus for upper board score greater than or equal to 63
         else:
             return upper_board_score + lower_board_score
-
