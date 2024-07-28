@@ -12,7 +12,7 @@ Python 3.10 and numpy 1.26.4 (could have been implemented without any dependenci
   - game_engine.py :  Meta class for game engines (should be refactored into a class for Markov Decision Process)
   - yahtzee_engine.py : Yahtzee implementation of GameEngine class with caching and lazy evaluation of transitions.
   - constants.py : File with constant variables
-- mcts.py : Implementation of the Monte Carlo Search Tree algorithm with UCT exploration
+- mcts.py : Implementation of the Monte Carlo Search Tree algorithm with UCT expansion
 - value_iteration.py : Implementation of the Value Iteration algorithm
 
 ## Further improvments
