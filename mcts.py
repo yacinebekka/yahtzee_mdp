@@ -28,7 +28,7 @@ class MCTSNode:
     
     def update(self, result: float):
         self.visits += 1
-        self.wins += (result / 400) # Normalize the score
+        self.wins += result
     
     def uct_select_child(self):
         if self.state.is_final:
@@ -56,7 +56,7 @@ class MCTSTree:
         current_node = node
         while not current_node.state.is_final and current_depth < self.simulation_depth:
             if current_node.untried_actions:
-                return current_node.expand()
+                current_node = current_node.expand()
             else:
                 current_node = current_node.uct_select_child()
             current_depth += 1
@@ -69,14 +69,16 @@ class MCTSTree:
             possible_actions = self.game_engine.get_possible_actions(current_state.is_final, current_state.remaining_rolls, tuple(current_state.score_card))
             action = random.choice(possible_actions)
             current_state = self.game_engine.apply_action(current_state, action)
-        return self.game_engine.get_total_score(tuple(current_state.score_card))  # This should calculate the score of the game ending
+        return self.game_engine.get_total_score(tuple(current_state.score_card)) / 400  # Normalize score
     
     def decide_move(self):
+        current_score = self.game_engine.get_total_score(tuple(self.root.state.score_card)) / 400
         for i in range(self.num_simulations):
             node = self.simulate(self.root)  # Start simulation from the current root
             result = self.rollout(node.state)  # Perform rollout from the returned node's state
+            value = result - current_score # Take the difference between rollout score and current score
             while node is not None:
-                node.update(result)  # Update node with the result from the rollout
+                node.update(value)  # Update node with the result from the rollout
                 node = node.parent  # Move to the parent node until the root is reached
 
         # Select the action leading to the child with the highest average score
