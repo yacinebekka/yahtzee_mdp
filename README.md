@@ -4,7 +4,7 @@ Python of the game of Yahtzee as a Markov Decision Process and different algorit
 
 ## Dependencies
 
-Python 3.10 and numpy 1.26.4 (could have been implemented without any dependencies but the engine would have been slower)
+Python 3.10 and numpy 1.26.4 (can be implemented without any dependencies but the engine would be slower)
 
 ## Content
 
