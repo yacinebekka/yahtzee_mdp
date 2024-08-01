@@ -6,6 +6,28 @@ import copy
 import csv
 import multiprocessing
 
+class PoolManager:
+    _pool = None
+    _num_processes = 2  # Default number of processes
+
+    @classmethod
+    def get_pool(cls):
+        if cls._pool is None or cls._pool._state != multiprocessing.pool.RUN:
+            cls._pool = multiprocessing.Pool(cls._num_processes)
+        return cls._pool
+
+    @classmethod
+    def set_num_processes(cls, num_processes):
+        cls._num_processes = num_processes
+        cls.shutdown_pool()  # Reset pool if process number changes
+
+    @classmethod
+    def shutdown_pool(cls):
+        if cls._pool is not None:
+            cls._pool.close()
+            cls._pool.join()
+            cls._pool = None
+
 
 class ParallelMCTSNode:
     def __init__(self, state: YahtzeeState, game_engine: YahtzeeEngine, parent=None, action: YahtzeeAction=None):
@@ -60,7 +82,7 @@ class ParallelMCTSNode:
 
 
 class ParallelMCTSTree:
-    def __init__(self, root: ParallelMCTSNode, game_engine: YahtzeeEngine, simulation_depth: int = 1000, num_simulations: int = 1000, num_processes: int = 2):
+    def __init__(self, pool_manager: PoolManager , root: ParallelMCTSNode, game_engine: YahtzeeEngine, simulation_depth: int = 1000, num_simulations: int = 1000, num_processes: int = 2):
         self.root = root
         self.game_engine = game_engine
         self.simulation_depth = simulation_depth
@@ -86,11 +108,7 @@ class ParallelMCTSTree:
             action = random.choice(possible_actions)
             current_state = self.game_engine.apply_action(current_state, action)
         return self.game_engine.get_total_score(tuple(current_state.score_card)) / 400
-    
-    def decide_move(self):
-        with multiprocessing.Pool(self.num_processes) as pool:
-            tasks = [(self.root.deep_copy()) for _ in range(self.num_processes)]
-            results = pool.map(self.run, tasks)
+
 
     def run(self, root_copy):
         current_score = self.game_engine.get_total_score(tuple(root_copy.state.score_card)) / 400
@@ -123,12 +141,10 @@ class ParallelMCTSTree:
                         print(action_to_original_child)
                         print('*---------------*')
 
-
-    
     def decide_move(self):
-        with multiprocessing.Pool(self.num_processes) as pool:
-            tasks = [(self.root.deep_copy()) for _ in range(self.num_processes)]
-            results = pool.map(self.run, tasks)
+        pool = PoolManager.get_pool()
+        tasks = [(self.root.deep_copy()) for _ in range(self.num_processes)]
+        results = pool.map(self.run, tasks)
 
         self.aggregate_trees(results)
 
@@ -138,19 +154,21 @@ class ParallelMCTSTree:
 ## Test simple MCTS approach
 
 def main():
+    pool_manager = PoolManager()
     for param_count, param in enumerate([500]):
-
         game_engine = YahtzeeEngine()
         initial_state = YahtzeeState((0,0,0,0,0), (None,)*13, 3)
         actions = game_engine.get_possible_actions(initial_state.is_final, initial_state.remaining_rolls, initial_state.score_card)
 
         score_list = []
-        time_list = []
+        decsion_time_list = []
 
         for count, game in enumerate(range(1)):
 
             state = game_engine.apply_action(initial_state, actions[0])
             play_count = 0
+
+            decision_time = 0
 
             while True:
 
@@ -158,7 +176,7 @@ def main():
                 # print(state)
 
                 root_node = ParallelMCTSNode(state=state, game_engine=game_engine)
-                mcts_tree = ParallelMCTSTree(root=root_node, game_engine=game_engine, num_simulations=param)
+                mcts_tree = ParallelMCTSTree(pool_manager=pool_manager, root=root_node, game_engine=game_engine, num_simulations=param)
 
                 start = time.time()
                 best_action = mcts_tree.decide_move()
@@ -168,7 +186,7 @@ def main():
                 # print("Chosen action")
                 # print(best_action)
 
-                time_list.append(diff)
+                decision_time += diff
 
                 new_state = game_engine.apply_action(state, best_action)
                 #reward = game_engine.calculate_reward(state, best_action, new_state)
@@ -178,30 +196,30 @@ def main():
 
                 if state.is_final:
                     score_list.append(state.total_score)
-                    # print(f'Game finished, score : {state.total_score}')
+                    decsion_time_list.append(decision_time)
+                    print(f'Game finished, score : {state.total_score}')
                     break
 
         print(f"Evaluation for param={param} completed")
         print(f"Avg score : {np.mean(score_list)}")
-        print(f"Avg decision time : {np.mean(time_list)}")
+        print(f"Total decision time : {np.mean(decsion_time_list)}")
 
-        # filename = f'output_mcts_round_2_{param_count + 1}.csv'
+        filename = f'output_mcts_multi_{param}_sim_2_worker_20_games.csv'
 
-        # # Open the file in write mode
-        # with open(filename, mode='w', newline='') as file:
-        #     writer = csv.writer(file)
-            
-        #     # Optionally write headers
-        #     writer.writerow(['score', 'time'])
-            
-        #     # Write the data
-        #     for item1, item2 in zip(score_list, time_list):
-        #         writer.writerow([item1, item2])
+        # Open the file in write mode
+        with open(filename, mode='w', newline='') as file:
+            writer = csv.writer(file)
+        
+            # Optionally write headers
+            writer.writerow(['score', 'time'])
+        
+            # Write the data
+            for item1, item2 in zip(score_list, decsion_time_list):
+                writer.writerow([item1, item2])
 
-        # print(f"Data written to {filename} successfully.")
+        print(f"Data written to {filename} successfully.")
 
-
-
+        pool_manager.shutdown_pool()
 
 if __name__ == '__main__':
     main()
