@@ -86,42 +86,74 @@ class MCTSTree:
         return best_action
 
 
+
 ## Test simple MCTS approach
-game_engine = YahtzeeEngine()
-initial_state = YahtzeeState((0,0,0,0,0), (None,)*13, 3)
-actions = game_engine.get_possible_actions(initial_state.is_final, initial_state.remaining_rolls, initial_state.score_card)
 
-state = game_engine.apply_action(initial_state, actions[0])
-play_count = 0
+for param_count, param in enumerate([500,1000,2500,5000]):
 
-while True:
-    # print('-------------')
-    # print(state)
+    game_engine = YahtzeeEngine()
+    initial_state = YahtzeeState((0,0,0,0,0), (None,)*13, 3)
+    actions = game_engine.get_possible_actions(initial_state.is_final, initial_state.remaining_rolls, initial_state.score_card)
 
-    root_node = MCTSNode(state=state, game_engine=game_engine)
-    mcts_tree = MCTSTree(root=root_node, game_engine=game_engine, num_simulations=param)
+    score_list = []
+    decsion_time_list = []
 
-    start = time.time()
-    best_action = mcts_tree.decide_move()
-    end = time.time()
-    diff = end - start
+    for count, game in enumerate(range(200)):
 
-    # print("Chosen action")
-    # print(best_action)
+        decision_time = 0
 
-    time_list.append(diff)
+        state = game_engine.apply_action(initial_state, actions[0])
+        play_count = 0
 
-    new_state = game_engine.apply_action(state, best_action)
-    #reward = game_engine.calculate_reward(state, best_action, new_state)
+        while True:
 
-    state = new_state
-    play_count += 1
+            # print('-------------')
+            # print(state)
 
-    if state.is_final:
-        score_list.append(state.total_score)
-        # print(f'Game finished, score : {state.total_score}')
-        break
+            root_node = MCTSNode(state=state, game_engine=game_engine)
+            mcts_tree = MCTSTree(root=root_node, game_engine=game_engine, num_simulations=param)
 
-print(f"Evaluation {param_count} completed")
-print(f"Avg score : {np.mean(score_list)}")
-print(f"Avg decision time : {np.mean(time_list)}")
+            actions = game_engine.get_possible_actions(initial_state.is_final, initial_state.remaining_rolls, initial_state.score_card)
+
+            if len(actions) == 1:
+                best_action = actions[0]
+            else:
+                start = time.time()
+                best_action = mcts_tree.decide_move()
+                end = time.time()
+                diff = end - start
+                decision_time += diff
+
+            # print("Chosen action")
+            # print(best_action)
+
+            new_state = game_engine.apply_action(state, best_action)
+            #reward = game_engine.calculate_reward(state, best_action, new_state)
+
+            state = new_state
+            play_count += 1
+
+            if state.is_final:
+                score_list.append(state.total_score)
+                decsion_time_list.append(decision_time)
+                print(f'Game finished, score : {state.total_score}')
+                break
+
+    print(f"Evaluation for param={param} completed")
+    print(f"Avg score : {np.mean(score_list)}")
+    print(f"Total decision time : {np.mean(decsion_time_list)}")
+
+    filename = f'output_mcts_seq_{param}_sim_20games_{param_count + 1}.csv'
+
+    # Open the file in write mode
+    with open(filename, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        
+        # Optionally write headers
+        writer.writerow(['score', 'time'])
+        
+        # Write the data
+        for item1, item2 in zip(score_list, decsion_time_list):
+            writer.writerow([item1, item2])
+
+    print(f"Data written to {filename} successfully.")
