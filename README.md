@@ -16,6 +16,10 @@ Python 3.10 and numpy 1.26.4 (can be implemented without any dependencies but th
 - multi_mcts.py : Implementation of root parallelized MCTS algorithm
 - value_iteration.py : Implementation of the Value Iteration algorithm
 
+## TODO
+
+- Cascade last changes of mcts.py into multi_mcts.py
+
 ## Further improvments
 
 - Add remaining upper score point before bonus as a state features + re-evaluate performance
