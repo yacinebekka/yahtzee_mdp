@@ -12,7 +12,7 @@ class MCTSNode:
         self.parent = parent
         self.action = action
         self.children = []
-        self.wins = 0
+        self.sum_normalized_score = 0
         self.visits = 0
         self.game_engine = game_engine
         self.untried_actions = list(self.game_engine.get_possible_actions(state.is_final, state.remaining_rolls, tuple(state.score_card)))
@@ -28,24 +28,28 @@ class MCTSNode:
     
     def update(self, result: float):
         self.visits += 1
-        self.wins += result
+        self.sum_normalized_score += result
     
     def uct_select_child(self):
         if self.state.is_final:
             raise Exception("Attempted to select a child from a terminal node")
         elif not self.children:
             raise Exception("No children available and no actions to expand")
-        C = 1.414  # Exploration parameter
         return max(self.children, key=lambda child: child.get_uct_value())
 
     def get_uct_value(self):
         if self.visits == 0:
             return float('inf')  # Encourage exploration of unvisited nodes
-        return self.wins / self.visits + 1.414 * np.sqrt(2 * np.log(self.parent.visits) / self.visits)
+        return self.sum_normalized_score / self.visits + 1.414 * np.sqrt(2 * np.log(self.parent.visits) / self.visits)
+
+    def __repr__(self):
+        action_desc = f"Action: {self.action}, " if self.action else ""
+        return (f"<MCTSNode {action_desc} sum_normalized_score: {self.sum_normalized_score}, Visits: {self.visits}, "
+                f"Untried Actions: {len(self.untried_actions)}, Children: {len(self.children)}>")
 
 
 class MCTSTree:
-    def __init__(self, root: MCTSNode, game_engine: YahtzeeEngine, simulation_depth: int = 250, num_simulations: int = 1000):
+    def __init__(self, root: MCTSNode, game_engine: YahtzeeEngine, simulation_depth: int = 100, num_simulations: int = 1000):
         self.root = root
         self.game_engine = game_engine
         self.simulation_depth = simulation_depth
@@ -57,6 +61,7 @@ class MCTSTree:
         while not current_node.state.is_final and current_depth < self.simulation_depth:
             if current_node.untried_actions:
                 current_node = current_node.expand()
+                break
             else:
                 current_node = current_node.uct_select_child()
             current_depth += 1
@@ -76,13 +81,13 @@ class MCTSTree:
         for i in range(self.num_simulations):
             node = self.simulate(self.root)  # Start simulation from the current root
             result = self.rollout(node.state)  # Perform rollout from the returned node's state
-            value = result - current_score # Take the difference between rollout score and current score
+            value = result # Take the difference between rollout score and current score
             while node is not None:
                 node.update(value)  # Update node with the result from the rollout
                 node = node.parent  # Move to the parent node until the root is reached
 
         # Select the action leading to the child with the highest average score
-        best_action = max(self.root.children, key=lambda child: child.wins / child.visits if child.visits > 0 else -float('inf')).action
+        best_action = max(self.root.children, key=lambda child: child.sum_normalized_score / child.visits if child.visits > 0 else -float('inf')).action
         return best_action
 
 
