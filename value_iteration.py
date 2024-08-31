@@ -9,6 +9,8 @@ class ValueIteration:
         """
         Initialize Value Iteration algorithm
         """
+
+
         self.state_space = state_space
         self.state_index = {state: idx for idx, state in enumerate(self.state_space)}
         self.actions_space = actions_space
