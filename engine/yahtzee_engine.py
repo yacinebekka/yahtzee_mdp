@@ -156,19 +156,13 @@ class YahtzeeEngine(GameEngine):
 
         if remaining_rolls > 0:
             actions.append(YahtzeeAction('roll', ())) # Add possibility for re-rolling all dices
-            indices = list(range(5))
-            for r in range(1, 6):
-                for subset in itertools.combinations(indices, r):
+            for r in range(1, 5):
+                for subset in itertools.combinations(range(5), r):
                     actions.append(YahtzeeAction('roll', subset))
 
-        # Alternative version : Do not allow scoring until last turn
-
-        if remaining_rolls == 0:
-            actions = [
-                        YahtzeeAction('score', category)
-                        for category in SCORING_CATEGORIES
-                        if score_card[SCORING_CATEGORIES.index(category)] == -1
-                    ]
+        for idx, category in enumerate(SCORING_CATEGORIES):
+            if score_card[idx] == -1:
+                actions.append(YahtzeeAction('score', category))
 
         return tuple(actions)
 

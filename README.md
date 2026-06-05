@@ -13,12 +13,8 @@ Python 3.10 and numpy 1.26.4 (can be implemented without any dependencies but th
   - yahtzee_engine.py : Yahtzee implementation of GameEngine class with caching and lazy evaluation of transitions.
   - constants.py : File with constant variables
 - mcts.py : Implementation of the Monte Carlo Search Tree algorithm with UCT expansion
-- multi_mcts.py : Implementation of root parallelized MCTS algorithm
-- value_iteration.py : Implementation of the Value Iteration algorithm
 
-## TODO
 
-- Cascade last changes of mcts.py into multi_mcts.py
 
 ## Further improvments
 
