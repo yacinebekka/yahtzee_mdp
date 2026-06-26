@@ -15,14 +15,13 @@ Python 3.10 and numpy 1.26.4 (can be implemented without any dependencies but th
 - mcts.py : Implementation of the Monte Carlo Search Tree algorithm with UCT expansion
 
 
-
 ## Further improvments
 
 - Add remaining upper score point before bonus as a state features + re-evaluate performance
-- Try some Q-function approximation techniques
+- Try other Q-function approximation techniques
 - Try policy-based approaches
-- Implementation in low-level language to improve performance
-- Refactor the GameEngine meta class into Markov Decision Process meta class
+- Porfiling and port to lower level language to improve performance
+- Refactor the GameEngine meta class into MarkovDecisionProcess meta class ?
 
 ## Meta
 
